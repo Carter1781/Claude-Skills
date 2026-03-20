@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyTan API Controller</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #4CAF50;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    .panel {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid #2a2a4e;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      padding: 16px;
+      background: #1a1a2e;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #555;
+    }
+
+    .status-dot.active { background: #4CAF50; box-shadow: 0 0 8px #4CAF50; }
+    .status-dot.error { background: #f44336; }
+
+    input, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #333;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #4CAF50;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    button {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover { background: #45a049; transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: #333;
+      color: #e0e0e0;
+    }
+
+    .btn-secondary:hover { background: #444; }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chat-container {
+      background: #0a0a15;
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin-bottom: 16px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      max-width: 85%;
+      line-height: 1.5;
+    }
+
+    .message.user {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      margin-left: auto;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message .sender {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .message.user .sender { color: rgba(255,255,255,0.7); }
+
+    .message .content {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .input-row input { flex: 1; }
+
+    .typing {
+      color: #888;
+      font-style: italic;
+      padding: 10px;
+    }
+
+    .log-container {
+      background: #0a0a15;
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 11px;
+      color: #888;
+    }
+
+    .log-entry { margin-bottom: 4px; }
+    .log-entry.success { color: #4CAF50; }
+    .log-entry.error { color: #f44336; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+
+    .info-label { color: #888; font-size: 13px; }
+    .info-value { color: #e0e0e0; font-size: 13px; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 MyTan API Controller</h1>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-dot" id="serverStatus"></div>
+        <span id="serverText">服务器</span>
+      </div>
+      <div class="status-item">
+        <div class="status-dot" id="chromeStatus"></div>
+        <span id="chromeText">Chrome</span>
+      </div>
+      <div class="status-item">
+        <div class="status-dot" id="pageStatus"></div>
+        <span id="pageText">页面</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="panel">
+      <div class="panel-title">快速操作</div>
+      <div class="btn-group">
+        <button onclick="createSession()" class="btn-primary">创建会话</button>
+        <button onclick="refreshStatus()" class="btn-secondary">刷新状态</button>
+        <button onclick="takeScreenshot()" class="btn-secondary">截图</button>
+        <button onclick="clearChat()" class="btn-secondary">清空</button>
+      </div>
+    </div>
+
+    <!-- Page Info -->
+    <div class="panel">
+      <div class="panel-title">页面信息</div>
+      <div class="info-row">
+        <span class="info-label">当前 URL</span>
+        <span class="info-value" id="currentUrl">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">页面标题</span>
+        <span class="info-value" id="currentTitle">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Session ID</span>
+        <span class="info-value" id="sessionId">-</span>
+      </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="panel">
+      <div class="panel-title">对话测试</div>
+      <div class="chat-container" id="chatContainer"></div>
+      <div class="input-row">
+        <input type="text" id="messageInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()" class="btn-primary">发送</button>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="panel">
+      <div class="panel-title">操作日志</div>
+      <div class="btn-group" style="margin-bottom: 10px;">
+        <button onclick="getNetworkLog()" class="btn-secondary">刷新</button>
+        <button onclick="clearLog()" class="btn-secondary">清空</button>
+      </div>
+      <div class="log-container" id="logContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:3000';
+    let sessionId = null;
+
+    // DOM
+    const serverStatus = document.getElementById('serverStatus');
+    const chromeStatus = document.getElementById('chromeStatus');
+    const pageStatus = document.getElementById('pageStatus');
+    const currentUrl = document.getElementById('currentUrl');
+    const currentTitle = document.getElementById('currentTitle');
+    const sessionIdEl = document.getElementById('sessionId');
+    const chatContainer = document.getElementById('chatContainer');
+    const logContainer = document.getElementById('logContainer');
+
+    function log(msg, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function addMessage(content, sender, type = 'user') {
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.innerHTML = `<div class="sender">${sender}</div><div class="content">${escapeHtml(content)}</div>`;
+      chatContainer.appendChild(msg);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function setStatus(el, active, text) {
+      el.className = `status-dot ${active ? 'active' : 'error'}`;
+      el.nextElementSibling.textContent = text;
+    }
+
+    async function api(method, endpoint, body = null) {
+      const url = `${API}${endpoint}`;
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = () => {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch (e) {
+            reject(e);
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(body ? JSON.stringify(body) : null);
+      });
+    }
+
+    async function refreshStatus() {
+      try {
+        const data = await api('GET', '/health');
+        setStatus(serverStatus, data.success && data.browserConnected, '服务器');
+        setStatus(chromeStatus, data.browserConnected, 'Chrome');
+        log('状态刷新成功', 'success');
+      } catch (e) {
+        setStatus(serverStatus, false, '服务器离线');
+        log('状态刷新失败', 'error');
+      }
+    }
+
+    async function createSession() {
+      try {
+        const data = await api('POST', '/session');
+        if (data.success) {
+          sessionId = data.sessionId;
+          sessionIdEl.textContent = sessionId;
+          setStatus(pageStatus, true, '已连接');
+          log(`会话创建成功: ${sessionId}`, 'success');
+
+          // 获取页面信息
+          const pageInfo = await api('POST', `/session/${sessionId}/evaluate`, {
+            script: 'JSON.stringify({ url: window.location.href, title: document.title })'
+          });
+          if (pageInfo.success) {
+            const info = JSON.parse(pageInfo.result);
+            currentUrl.textContent = info.url;
+            currentTitle.textContent = info.title;
+          }
+        }
+      } catch (e) {
+        log('创建会话失败: ' + e.message, 'error');
+      }
+    }
+
+    async function sendMessage() {
+      if (!sessionId) {
+        log('请先创建会话', 'error');
+        return;
+      }
+
+      const text = document.getElementById('messageInput').value.trim();
+      if (!text) return;
+
+      document.getElementById('messageInput').value = '';
+      addMessage(text, 'You', 'user');
+      log(`发送: ${text.substring(0, 30)}...`, 'info');
+
+      // 加载状态
+      const loadingMsg = document.createElement('div');
+      loadingMsg.className = 'message assistant';
+      loadingMsg.id = 'loading-msg';
+      loadingMsg.innerHTML = '<div class="sender">MyTan</div><div class="content typing">思考中...</div>';
+      chatContainer.appendChild(loadingMsg);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        // 输入文本
+        await api('POST', `/session/${sessionId}/type`, {
+          selector: 'textarea',
+          text: text
+        });
+
+        // 点击发送
+        await api('POST', `/session/${sessionId}/evaluate`, {
+          script: 'const si = document.querySelector(".send-icon"); if (si) { (si.closest(".pointer") || si).click(); }'
+        });
+
+        // 轮询等待流式输出完成 - 检测功能图标出现才算结束
+        let attempts = 0;
+        const maxAttempts = 60; // 最多等60秒
+        let responseText = '';
+
+        while (attempts < maxAttempts) {
+          await new Promise(r => setTimeout(r, 1000));
+          attempts++;
+
+          // 检查最后一条消息是否有功能图标（复制、点赞、删除、重新生成）
+          const status = await api('POST', `/session/${sessionId}/evaluate`, {
+            script: `(function() {
+              var msgs = document.querySelectorAll(".message-container");
+              var lastMsg = msgs[msgs.length - 1];
+              if (!lastMsg) return { hasBtns: false, text: null };
+              var btns = lastMsg.querySelector(".message-btns");
+              var content = lastMsg.querySelector(".message-content");
+              return { hasBtns: !!btns, text: content ? content.innerText : null };
+            })()`
+          });
+
+          if (status.success && status.result) {
+            const { hasBtns, text } = status.result;
+            if (hasBtns && text && text.length > 10) {
+              // 检测到功能图标后，等待500ms确保内容已完全写入
+              await new Promise(r => setTimeout(r, 500));
+              // 再读取一次确认内容完整
+              const confirmStatus = await api('POST', `/session/${sessionId}/evaluate`, {
+                script: `(function() {
+                  var msgs = document.querySelectorAll(".message-container");
+                  var lastMsg = msgs[msgs.length - 1];
+                  var content = lastMsg ? lastMsg.querySelector(".message-content") : null;
+                  return content ? content.innerText : null;
+                })()`
+              });
+              if (confirmStatus.success && confirmStatus.result) {
+                responseText = confirmStatus.result;
+                break;
+              }
+              responseText = text;
+              break;
+            }
+          }
+
+          // 更新加载状态
+          const loadingEl = document.getElementById('loading-msg');
+          if (loadingEl) {
+            loadingEl.querySelector('.content').textContent = `等待回复... (${attempts}s)`;
+          }
+        }
+
+        chatContainer.removeChild(loadingMsg);
+
+        if (responseText) {
+          // 提取回复内容（去掉 "MyTan\n已深度思考..." 前缀）
+          const reply = responseText.replace(/^MyTan\n.*?\n\n/, '');
+          addMessage(reply, 'MyTan', 'assistant');
+          log(`收到回复 (${reply.length} 字符)`, 'success');
+        } else {
+          addMessage('等待回复超时，请重试', 'System', 'assistant');
+          log('回复超时', 'error');
+        }
+      } catch (e) {
+        const loadingEl = document.getElementById('loading-msg');
+        if (loadingEl) chatContainer.removeChild(loadingEl);
+        log('发送失败: ' + e.message, 'error');
+      }
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    async function takeScreenshot() {
+      if (!sessionId) {
+        log('请先创建会话', 'error');
+        return;
+      }
+      try {
+        const data = await api('GET', `/session/${sessionId}/screenshot`);
+        if (data.success && data.screenshot) {
+          const img = document.createElement('img');
+          img.src = data.screenshot;
+          img.style = 'max-width: 100%; margin-top: 10px; border-radius: 8px;';
+          chatContainer.appendChild(img);
+          log('截图成功', 'success');
+        }
+      } catch (e) {
+        log('截图失败', 'error');
+      }
+    }
+
+    function clearChat() {
+      chatContainer.innerHTML = '';
+      log('对话已清空', 'info');
+    }
+
+    async function getNetworkLog() {
+      if (!sessionId) {
+        log('请先创建会话', 'error');
+        return;
+      }
+      try {
+        const data = await api('GET', `/session/${sessionId}/network`);
+        if (data.success) {
+          logContainer.innerHTML = '';
+          data.logs.slice(-10).forEach(l => {
+            const type = l.url.includes('/messages') ? 'success' : 'info';
+            log(`${l.method} ${l.url.split('/api/').pop()}`, type);
+          });
+        }
+      } catch (e) {
+        log('获取日志失败', 'error');
+      }
+    }
+
+    function clearLog() {
+      logContainer.innerHTML = '';
+    }
+
+    // Init
+    refreshStatus();
+    log('系统就绪', 'info');
+  </script>
+</body>
+</html>
