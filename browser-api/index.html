@@ -208,6 +208,68 @@
     .info-value { color: #e0e0e0; font-size: 13px; }
 
     .hidden { display: none; }
+
+    /* API 文档样式 */
+    .api-section {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #333;
+    }
+    .api-section:last-child { border-bottom: none; }
+    .api-section h3 {
+      color: #4CAF50;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .api-table td {
+      padding: 6px 12px;
+      border-bottom: 1px solid #2a2a4e;
+    }
+    .api-table td:first-child {
+      color: #888;
+      width: 120px;
+    }
+    .api-endpoint {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      font-size: 13px;
+    }
+    .method {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .method.post { background: #4CAF50; color: white; }
+    .method.get { background: #2196F3; color: white; }
+    .method.delete { background: #f44336; color: white; }
+    .api-endpoint code { color: #e0e0e0; }
+    .api-endpoint .desc { color: #888; font-size: 12px; }
+    .code-block {
+      background: #0a0a15;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .code-title {
+      color: #888;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    .code-block pre {
+      color: #4CAF50;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
   </style>
 </head>
 <body>
@@ -276,6 +338,110 @@
         <button onclick="clearLog()" class="btn-secondary">清空</button>
       </div>
       <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <!-- API 文档 -->
+    <div class="panel">
+      <div class="panel-title">API 文档</div>
+      <div class="btn-group" style="margin-bottom: 16px;">
+        <button onclick="toggleApiDoc()" class="btn-secondary" id="apiDocToggle">展开</button>
+        <button onclick="copyApiExample()" class="btn-secondary">复制示例</button>
+      </div>
+      <div id="apiDocContent" style="display: none;">
+        <div class="api-section">
+          <h3>基础信息</h3>
+          <table class="api-table">
+            <tr><td>Base URL</td><td><code>http://localhost:3000</code></td></tr>
+            <tr><td>Content-Type</td><td><code>application/json</code></td></tr>
+            <tr><td>响应格式</td><td><code>{"success": true, ...data}</code></td></tr>
+          </table>
+        </div>
+
+        <div class="api-section">
+          <h3>会话管理</h3>
+          <div class="api-endpoint">
+            <span class="method post">POST</span>
+            <code>/session</code>
+            <span class="desc">创建新会话</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method delete">DELETE</span>
+            <code>/session/:id</code>
+            <span class="desc">关闭会话</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method get">GET</span>
+            <code>/health</code>
+            <span class="desc">健康检查</span>
+          </div>
+        </div>
+
+        <div class="api-section">
+          <h3>页面操作</h3>
+          <div class="api-endpoint">
+            <span class="method post">POST</span>
+            <code>/session/:id/navigate</code>
+            <span class="desc">导航到 URL</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method post">POST</span>
+            <code>/session/:id/click</code>
+            <span class="desc">点击元素</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method post">POST</span>
+            <code>/session/:id/type</code>
+            <span class="desc">输入文本</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method post">POST</span>
+            <code>/session/:id/evaluate</code>
+            <span class="desc">执行 JavaScript</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method get">GET</span>
+            <code>/session/:id/screenshot</code>
+            <span class="desc">页面截图</span>
+          </div>
+        </div>
+
+        <div class="api-section">
+          <h3>请求示例 (curl)</h3>
+          <div class="code-block">
+            <div class="code-title">创建会话</div>
+            <pre>curl -X POST http://localhost:3000/session</pre>
+          </div>
+          <div class="code-block">
+            <div class="code-title">发送消息</div>
+            <pre>curl -X POST http://localhost:3000/session/{id}/type \
+  -H "Content-Type: application/json" \
+  -d '{"selector": "textarea", "text": "你好"}'</pre>
+          </div>
+          <div class="code-block">
+            <div class="code-title">点击发送按钮</div>
+            <pre>curl -X POST http://localhost:3000/session/{id}/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"script": "document.querySelector(\".send-icon\").closest(\".pointer\").click()"}'</pre>
+          </div>
+          <div class="code-block">
+            <div class="code-title">提取 AI 回复</div>
+            <pre>curl -X POST http://localhost:3000/session/{id}/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"script": "(function(){var msgs=document.querySelectorAll(\".message-container\");var last=msgs[msgs.length-1];return last?last.querySelector(\".message-content\").innerText:null;})()"}'</pre>
+          </div>
+        </div>
+
+        <div class="api-section">
+          <h3>流式响应检测</h3>
+          <div class="code-block">
+            <div class="code-title">检测消息完成的正确方式</div>
+            <pre>// 1. 轮询检测 .message-btns 元素出现
+// 2. 检测到后等待 500ms
+// 3. 再次读取内容确认完整
+// 4. 只有 hasBtns && text.length > 10 才认为成功</pre>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -528,6 +694,44 @@
 
     function clearLog() {
       logContainer.innerHTML = '';
+    }
+
+    function toggleApiDoc() {
+      const content = document.getElementById('apiDocContent');
+      const toggle = document.getElementById('apiDocToggle');
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.textContent = '收起';
+      } else {
+        content.style.display = 'none';
+        toggle.textContent = '展开';
+      }
+    }
+
+    function copyApiExample() {
+      const examples = `=== 创建会话 ===
+curl -X POST http://localhost:3000/session
+
+=== 发送消息 ===
+curl -X POST http://localhost:3000/session/{id}/type \\
+  -H "Content-Type: application/json" \\
+  -d '{"selector": "textarea", "text": "你好"}'
+
+=== 点击发送 ===
+curl -X POST http://localhost:3000/session/{id}/evaluate \\
+  -H "Content-Type: application/json" \\
+  -d '{"script": "document.querySelector(\\".send-icon\\").closest(\\".pointer\\").click()"}'
+
+=== 提取回复 ===
+curl -X POST http://localhost:3000/session/{id}/evaluate \\
+  -H "Content-Type: application/json" \\
+  -d '{"script": "(function(){var msgs=document.querySelectorAll(\\".message-container\\");var last=msgs[msgs.length-1];return last?last.querySelector(\\".message-content\\").innerText:null;})()"}'`;
+
+      navigator.clipboard.writeText(examples).then(() => {
+        log('示例代码已复制到剪贴板', 'success');
+      }).catch(() => {
+        log('复制失败', 'error');
+      });
     }
 
     // Init
