@@ -1,0 +1,15 @@
+{
+  "name": "browser-api",
+  "version": "1.0.0",
+  "description": "Chrome DevTools MCP 风格浏览器自动化 API - 基于 Puppeteer",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^22.0.0"
+  }
+}
